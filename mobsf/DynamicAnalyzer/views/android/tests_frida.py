@@ -35,13 +35,11 @@ logger = logging.getLogger(__name__)
 @require_http_methods(['GET'])
 def list_frida_scripts(request, api=False):
     """Get frida scripts from others."""
-    scripts = []
     others = os.path.join(settings.TOOLS_DIR,
                           'frida_scripts',
                           'others')
     files = glob.glob(others + '**/*.js', recursive=True)
-    for item in files:
-        scripts.append(Path(item).stem)
+    scripts = [Path(item).stem for item in files]
     return send_response({'status': 'ok',
                           'files': scripts},
                          api)
@@ -275,13 +273,12 @@ def apimon_analysis(app_dir):
                 flip.read()[:-1]))
         for api in apis:
             to_decode = None
-            if (api['class'] == 'android.util.Base64'
-                    and (api['method'] == 'encodeToString')):
-                if api.get('returnValue'):
-                    to_decode = api['returnValue'].replace('"', '')
-            elif (api['class'] == 'android.util.Base64'
-                  and api['method'] == 'decode'):
-                to_decode = api['arguments'][0]
+            if api['class'] == 'android.util.Base64':
+                if api['method'] == 'encodeToString':
+                    if api.get('returnValue'):
+                        to_decode = api['returnValue'].replace('"', '')
+                elif api['method'] == 'decode':
+                    to_decode = api['arguments'][0]
             try:
                 if to_decode:
                     api['decoded'] = decode_base64(

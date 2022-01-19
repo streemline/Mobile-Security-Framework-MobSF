@@ -238,10 +238,7 @@ def httptools_start(request):
         start_httptools_ui(settings.PROXY_PORT)
         time.sleep(3)
         logger.info('httptools UI started')
-        if request.GET['project']:
-            project = request.GET['project']
-        else:
-            project = ''
+        project = request.GET['project'] or ''
         url = f'{httptools_url}/dashboard/{project}'
         return HttpResponseRedirect(
             url)  # lgtm [py/reflective-xss] lgtm [py/url-redirection]

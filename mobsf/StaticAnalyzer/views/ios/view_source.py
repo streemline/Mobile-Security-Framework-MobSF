@@ -130,9 +130,9 @@ def run(request, api=False):
                          encoding='utf8',
                          errors='ignore') as flip:
                 dat = flip.read()
+        elif api:
+            return {'error': 'Invalid Parameters'}
         else:
-            if api:
-                return {'error': 'Invalid Parameters'}
             return HttpResponseRedirect('/error/')
         context = {
             'title': escape(ntpath.basename(fil)),

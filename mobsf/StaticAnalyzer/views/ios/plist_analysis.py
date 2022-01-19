@@ -33,8 +33,7 @@ def convert_bin_xml(bin_xml_file):
     """Convert Binary XML to Readable XML."""
     try:
         plist_obj = readPlist(bin_xml_file)
-        data = writePlistToString(plist_obj)
-        return data
+        return writePlistToString(plist_obj)
     except InvalidPlistException:
         logger.warning('Failed to convert plist')
 
@@ -67,8 +66,9 @@ def plist_analysis(src, is_source):
             logger.info('Finding Info.plist in iOS Source')
             for dirpath, _dirnames, files in os.walk(src):
                 for name in files:
-                    if (not any(x in dirpath for x in ['__MACOSX', 'Pods'])
-                            and name.endswith('.plist')):
+                    if all(
+                        x not in dirpath for x in ['__MACOSX', 'Pods']
+                    ) and name.endswith('.plist'):
                         plist_files.append(os.path.join(dirpath, name))
                         if name == 'Info.plist':
                             plist_file = os.path.join(dirpath, name)

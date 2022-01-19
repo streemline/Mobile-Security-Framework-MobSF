@@ -30,9 +30,8 @@ def first_run(secret_file, base_dir, mobsf_home):
     else:
         try:
             secret_key = get_random()
-            secret = open(secret_file, 'w')
-            secret.write(secret_key)
-            secret.close()
+            with open(secret_file, 'w') as secret:
+                secret.write(secret_key)
         except IOError:
             raise Exception('Secret file generation failed' % secret_file)
         # Run Once
@@ -98,7 +97,7 @@ def migrate(base_dir):
 
 def get_random():
     choice = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-    return ''.join([random.SystemRandom().choice(choice) for i in range(50)])
+    return ''.join([random.SystemRandom().choice(choice) for _ in range(50)])
 
 
 def get_mobsf_home(use_home, base_dir):

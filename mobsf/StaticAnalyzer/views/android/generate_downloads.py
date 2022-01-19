@@ -33,14 +33,14 @@ def run(request):
             directory = os.path.join(app_dir, 'java_source/')
             dwd_dir = os.path.join(settings.DWD_DIR, file_name)
             shutil.make_archive(dwd_dir, 'zip', directory)
-            file_name = file_name + '.zip'
+            file_name += '.zip'
         elif file_type == 'smali':
             # For Smali
             file_name = md5 + '-smali'
             directory = os.path.join(app_dir, 'smali_source/')
             dwd_dir = os.path.join(settings.DWD_DIR, file_name)
             shutil.make_archive(dwd_dir, 'zip', directory)
-            file_name = file_name + '.zip'
+            file_name += '.zip'
         elif file_type == 'apk':
             file_name = md5 + '.apk'
             src = os.path.join(app_dir, file_name)

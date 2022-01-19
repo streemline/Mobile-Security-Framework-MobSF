@@ -13,9 +13,7 @@ class Checksec:
         self.macho = lief.parse(self.macho_path)
 
     def checksec(self):
-        macho_dict = {}
-        macho_dict['name'] = self.macho.name
-
+        macho_dict = {'name': self.macho.name}
         if not self.is_macho(self.macho_path):
             return {}
 
@@ -29,13 +27,11 @@ class Checksec:
         is_stripped = self.is_symbols_stripped()
 
         if has_nx:
-            severity = 'info'
             desc = (
                 'The binary has NX bit set. This marks a '
                 'memory page non-executable making attacker '
                 'injected shellcode non-executable.')
         else:
-            severity = 'info'
             desc = (
                 'The binary does not have NX bit set. NX bit '
                 'offer protection against exploitation of memory corruption '
@@ -44,6 +40,7 @@ class Checksec:
                 'memory. You do not need to specifically enable the '
                 '‘NX bit’ because it’s always enabled for all '
                 'third-party code.')
+        severity = 'info'
         macho_dict['nx'] = {
             'has_nx': has_nx,
             'severity': severity,
@@ -200,16 +197,14 @@ class Checksec:
     def has_canary(self):
         stk_check = '___stack_chk_fail'
         stk_guard = '___stack_chk_guard'
-        ipt_list = set()
-        for ipt in self.macho.imported_functions:
-            ipt_list.add(str(ipt))
+        ipt_list = {str(ipt) for ipt in self.macho.imported_functions}
         return stk_check in ipt_list and stk_guard in ipt_list
 
     def has_arc(self):
-        for func in self.macho.imported_functions:
-            if str(func).strip() == '_objc_release':
-                return True
-        return False
+        return any(
+            str(func).strip() == '_objc_release'
+            for func in self.macho.imported_functions
+        )
 
     def has_rpath(self):
         return self.macho.has_rpath
@@ -224,10 +219,7 @@ class Checksec:
         return bool(self.macho.encryption_info.crypt_id)
 
     def is_symbols_stripped(self):
-        for i in self.macho.symbols:
-            if i:
-                return False
-        return True
+        return not any(self.macho.symbols)
 
     def get_libraries(self):
         libs = []
@@ -240,10 +232,7 @@ class Checksec:
         return libs
 
     def get_symbols(self):
-        symbols = []
-        for i in self.macho.symbols:
-            symbols.append(i.name)
-        return symbols
+        return [i.name for i in self.macho.symbols]
 
 
 def macho_analysis(binary):

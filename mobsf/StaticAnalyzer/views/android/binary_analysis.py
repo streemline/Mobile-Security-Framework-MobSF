@@ -15,8 +15,7 @@ class Checksec:
         self.elf = lief.parse(self.elf_path)
 
     def checksec(self):
-        elf_dict = {}
-        elf_dict['name'] = self.elf_rel
+        elf_dict = {'name': self.elf_rel}
         if not self.is_elf(self.elf_path):
             return
         is_nx = self.is_nx()
@@ -195,10 +194,7 @@ class Checksec:
             flags = lief.ELF.DYNAMIC_TAGS.FLAGS
             bind_now = lief.ELF.DYNAMIC_FLAGS.BIND_NOW
             if self.elf.get(gnu_relro):
-                if bind_now in self.elf.get(flags):
-                    return 'Full RELRO'
-                else:
-                    return 'Partial RELRO'
+                return 'Full RELRO' if bind_now in self.elf.get(flags) else 'Partial RELRO'
             return 'No RELRO'
         except lief.not_found:
             return 'No RELRO'
@@ -218,17 +214,14 @@ class Checksec:
             return False
 
     def is_symbols_stripped(self):
-        for i in self.elf.static_symbols:
-            if i:
-                return False
-        return True
+        return not any(self.elf.static_symbols)
 
     def fortify(self):
-        fortified_funcs = []
-        for function in self.elf.symbols:
-            if function.name.endswith('_chk'):
-                fortified_funcs.append(function.name)
-        return fortified_funcs
+        return [
+            function.name
+            for function in self.elf.symbols
+            if function.name.endswith('_chk')
+        ]
 
     def strings(self):
         return self.elf.strings

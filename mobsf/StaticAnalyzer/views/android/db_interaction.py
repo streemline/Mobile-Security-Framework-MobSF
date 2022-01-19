@@ -18,7 +18,7 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
     """Return the context for APK/ZIP from DB."""
     try:
         logger.info('Analysis is already Done. Fetching data from the DB...')
-        context = {
+        return {
             'version': settings.MOBSF_VER,
             'title': 'Static Analysis',
             'file_name': db_entry[0].FILE_NAME,
@@ -68,7 +68,6 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
             'playstore_details': python_dict(db_entry[0].PLAYSTORE_DETAILS),
             'secrets': python_list(db_entry[0].SECRETS),
         }
-        return context
     except Exception:
         logger.exception('Fetching from DB')
 
@@ -84,7 +83,7 @@ def get_context_from_analysis(app_dic,
                               trackers) -> dict:
     """Get the context for APK/ZIP from analysis results."""
     try:
-        context = {
+        return {
             'title': 'Static Analysis',
             'version': settings.MOBSF_VER,
             'file_name': app_dic['app_name'],
@@ -132,7 +131,6 @@ def get_context_from_analysis(app_dic,
             'playstore_details': app_dic['playstore'],
             'secrets': app_dic['secrets'],
         }
-        return context
     except Exception:
         logger.exception('Rendering to Template')
 

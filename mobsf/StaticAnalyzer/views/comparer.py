@@ -25,11 +25,7 @@ def diff_apkid(context: dict) -> None:
                   'packer', 'dropper', 'manipulator',
                   'anti_disassembly', 'anti_debug', 'abnormal']
 
-    context['apkid'] = {}
-    context['apkid']['common'] = {}
-    context['apkid']['only_first'] = {}
-    context['apkid']['only_second'] = {}
-
+    context['apkid'] = {'common': {}, 'only_first': {}, 'only_second': {}}
     first_apkid, second_apkid = (context['first_app']['apkid'],
                                  context['second_app']['apkid'])
     first_error, second_error = first_apkid.get(
@@ -161,11 +157,7 @@ def generic_compare(request,
         subject_regex = re.compile(r'Subject: .*')
         match = subject_regex.search(
             db_context['certificate_analysis']['certificate_info'])
-        if match:
-            context[curr_app]['cert_subject'] = match.group()
-        else:
-            context[curr_app]['cert_subject'] = 'No subject'
-
+        context[curr_app]['cert_subject'] = match.group() if match else 'No subject'
         # Some preparations so we have some sort of same structures
         # (urls are lists inside the list which mess things up...)
         tmp_list = []
@@ -228,7 +220,4 @@ def generic_compare(request,
     diff_browsable_activities(context, first_app, second_app)
 
     template = 'static_analysis/compare.html'
-    if api:
-        return context
-    else:
-        return render(request, template, context)
+    return context if api else render(request, template, context)

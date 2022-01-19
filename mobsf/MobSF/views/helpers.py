@@ -23,15 +23,13 @@ class FileType(object):
 
         return bool
         """
-        if self.zip and (
+        return bool(self.zip and (
             self.is_apk()
                 or self.is_xapk()
                 or self.is_zip()
                 or self.is_ipa()
                 or self.is_appx()
-                or self.is_apks()):
-            return True
-        return False
+                or self.is_apks()))
 
     def is_apks(self):
         return (self.file_type in settings.APK_MIME

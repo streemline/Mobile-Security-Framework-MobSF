@@ -156,10 +156,7 @@ def check_transport_security(p_list):
                     }
                     ats.append(findings)
 
-                elif inc_min_tls is None:
-                    pass
-
-                else:
+                elif inc_min_tls is not None:
                     findings = {
                         'issue': ('NSExceptionMinimumTLSVersion set to {}'
                                   ' on {}'.format(inc_min_tls, domain)),

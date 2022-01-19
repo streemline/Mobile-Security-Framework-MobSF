@@ -39,10 +39,7 @@ def get_manifest(app_path, app_dir, tools_dir, typ, binary):
             typ,
             binary)
         mfile = Path(manifest_file)
-        if mfile.exists():
-            manifest = mfile.read_text('utf-8', 'ignore')
-        else:
-            manifest = ''
+        manifest = mfile.read_text('utf-8', 'ignore') if mfile.exists() else ''
         try:
             logger.info('Parsing AndroidManifest.xml')
             manifest = minidom.parseString(manifest)
@@ -67,13 +64,6 @@ def manifest_data(mfxml):
     """Extract manifest data."""
     try:
         logger.info('Extracting Manifest Data')
-        svc = []
-        act = []
-        brd = []
-        cnp = []
-        lib = []
-        perm = []
-        cat = []
         icons = []
         dvm_perm = {}
         package = ''
@@ -100,16 +90,17 @@ def manifest_data(mfxml):
             # is not set, the default value is the one of the
             # android:minSdkVersiontargetsdk
             # =node.getAttribute('android:targetSdkVersion')
-            if node.getAttribute('android:targetSdkVersion'):
-                targetsdk = node.getAttribute('android:targetSdkVersion')
-            else:
-                targetsdk = node.getAttribute('android:minSdkVersion')
-            # End
+            targetsdk = node.getAttribute(
+                'android:targetSdkVersion'
+            ) or node.getAttribute('android:minSdkVersion')
+
+                    # End
         for node in manifest:
             package = node.getAttribute('package')
             androidversioncode = node.getAttribute('android:versionCode')
             androidversionname = node.getAttribute('android:versionName')
         alt_main = ''
+        act = []
         for activity in activities:
             act_2 = activity.getAttribute('android:name')
             act.append(act_2)
@@ -128,25 +119,27 @@ def manifest_data(mfxml):
         if not mainact and alt_main:
             mainact = alt_main
 
+        svc = []
         for service in services:
             service_name = service.getAttribute('android:name')
             svc.append(service_name)
 
+        cnp = []
         for provider in providers:
             provider_name = provider.getAttribute('android:name')
             cnp.append(provider_name)
 
+        brd = []
         for receiver in receivers:
             rec = receiver.getAttribute('android:name')
             brd.append(rec)
 
+        lib = []
         for _lib in libs:
             library = _lib.getAttribute('android:name')
             lib.append(library)
 
-        for category in categories:
-            cat.append(category.getAttribute('android:name'))
-
+        cat = [category.getAttribute('android:name') for category in categories]
         for application in applications:
             try:
                 icon_path = application.getAttribute('android:icon')
@@ -155,8 +148,7 @@ def manifest_data(mfxml):
                 continue  # No icon attribute?
 
         android_permission_tags = ('com.google.', 'android.', 'com.google.')
-        for permission in permissions:
-            perm.append(permission.getAttribute('android:name'))
+        perm = [permission.getAttribute('android:name') for permission in permissions]
         for full_perm in perm:
             # For general android permissions
             prm = full_perm
@@ -180,7 +172,7 @@ def manifest_data(mfxml):
                         'Unknown permission from android reference',
                     ]
 
-        man_data_dic = {
+        return {
             'services': svc,
             'activities': act,
             'receivers': brd,
@@ -197,8 +189,6 @@ def manifest_data(mfxml):
             'androvername': androidversionname,
             'icons': icons,
         }
-
-        return man_data_dic
     except Exception:
         logger.exception('Extracting Manifest Data')
 
@@ -206,7 +196,6 @@ def manifest_data(mfxml):
 def get_browsable_activities(node):
     """Get Browsable Activities."""
     try:
-        browse_dic = {}
         schemes = []
         mime_types = []
         hosts = []
@@ -241,13 +230,16 @@ def get_browsable_activities(node):
                     if path_pattern and path_pattern not in path_patterns:
                         path_patterns.append(path_pattern)
         schemes = [scheme + '://' for scheme in schemes]
-        browse_dic['schemes'] = schemes
-        browse_dic['mime_types'] = mime_types
-        browse_dic['hosts'] = hosts
-        browse_dic['ports'] = ports
-        browse_dic['paths'] = paths
-        browse_dic['path_prefixs'] = path_prefixs
-        browse_dic['path_patterns'] = path_patterns
+        browse_dic = {
+            'schemes': schemes,
+            'mime_types': mime_types,
+            'hosts': hosts,
+            'ports': ports,
+            'paths': paths,
+            'path_prefixs': path_prefixs,
+            'path_patterns': path_patterns,
+        }
+
         browse_dic['browsable'] = bool(browse_dic['schemes'])
         return browse_dic
     except Exception:

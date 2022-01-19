@@ -102,7 +102,7 @@ def unzip(app_path, ext_path):
                 dat = subprocess.check_output([unzip_b, '-qq', '-l', app_path])
                 dat = dat.decode('utf-8').split('\n')
                 files_det = ['Length   Date   Time   Name']
-                files_det = files_det + dat
+                files_det += dat
                 return files_det
             except Exception:
                 logger.exception('Unzipping Error')
@@ -110,10 +110,7 @@ def unzip(app_path, ext_path):
 
 def pdf(request, api=False, jsonres=False):
     try:
-        if api:
-            checksum = request.POST['hash']
-        else:
-            checksum = request.GET['md5']
+        checksum = request.POST['hash'] if api else request.GET['md5']
         hash_match = re.match('^[0-9a-f]{32}$', checksum)
         if not hash_match:
             if api:
@@ -136,14 +133,13 @@ def pdf(request, api=False, jsonres=False):
             context, template = handle_pdf_ios(ios_static_db)
         elif win_static_db.exists():
             context, template = handle_pdf_win(win_static_db)
+        elif api:
+            return {'report': 'Report not Found'}
         else:
-            if api:
-                return {'report': 'Report not Found'}
-            else:
-                return HttpResponse(
-                    json.dumps({'report': 'Report not Found'}),
-                    content_type=ctype,
-                    status=500)
+            return HttpResponse(
+                json.dumps({'report': 'Report not Found'}),
+                content_type=ctype,
+                status=500)
         # Do VT Scan only on binaries
         context['virus_total'] = None
         ext = os.path.splitext(context['file_name'].lower())[1]
@@ -168,47 +164,45 @@ def pdf(request, api=False, jsonres=False):
         try:
             if api and jsonres:
                 return {'report_dat': context}
-            else:
-                options = {
-                    'page-size': 'Letter',
-                    'quiet': '',
-                    'enable-local-file-access': '',
-                    'no-collate': '',
-                    'margin-top': '0.50in',
-                    'margin-right': '0.50in',
-                    'margin-bottom': '0.50in',
-                    'margin-left': '0.50in',
-                    'encoding': 'UTF-8',
-                    'orientation': 'Landscape',
-                    'custom-header': [
-                        ('Accept-Encoding', 'gzip'),
-                    ],
-                    'no-outline': None,
-                }
-                # Added proxy support to wkhtmltopdf
-                proxies, _ = upstream_proxy('https')
-                if proxies['https']:
-                    options['proxy'] = proxies['https']
-                html = template.render(context)
-                pdf_dat = pdfkit.from_string(html, False, options=options)
-                if api:
-                    return {'pdf_dat': pdf_dat}
-                return HttpResponse(pdf_dat,
-                                    content_type='application/pdf')
+            options = {
+                'page-size': 'Letter',
+                'quiet': '',
+                'enable-local-file-access': '',
+                'no-collate': '',
+                'margin-top': '0.50in',
+                'margin-right': '0.50in',
+                'margin-bottom': '0.50in',
+                'margin-left': '0.50in',
+                'encoding': 'UTF-8',
+                'orientation': 'Landscape',
+                'custom-header': [
+                    ('Accept-Encoding', 'gzip'),
+                ],
+                'no-outline': None,
+            }
+            # Added proxy support to wkhtmltopdf
+            proxies, _ = upstream_proxy('https')
+            if proxies['https']:
+                options['proxy'] = proxies['https']
+            html = template.render(context)
+            pdf_dat = pdfkit.from_string(html, False, options=options)
+            if api:
+                return {'pdf_dat': pdf_dat}
+            return HttpResponse(pdf_dat,
+                                content_type='application/pdf')
         except Exception as exp:
             logger.exception('Error Generating PDF Report')
             if api:
                 return {
                     'error': 'Cannot Generate PDF/JSON',
                     'err_details': str(exp)}
-            else:
-                err = {
-                    'pdf_error': 'Cannot Generate PDF',
-                    'err_details': str(exp)}
-                return HttpResponse(
-                    json.dumps(err),  # lgtm [py/stack-trace-exposure]
-                    content_type=ctype,
-                    status=500)
+            err = {
+                'pdf_error': 'Cannot Generate PDF',
+                'err_details': str(exp)}
+            return HttpResponse(
+                json.dumps(err),  # lgtm [py/stack-trace-exposure]
+                content_type=ctype,
+                status=500)
     except Exception as exp:
         logger.exception('Error Generating PDF Report')
         msg = str(exp)
@@ -228,12 +222,10 @@ def handle_pdf_android(static_db):
         'security_score'] = score(context['code_analysis'])
     if context['file_name'].lower().endswith('.zip'):
         logger.info('Generating PDF report for android zip')
-        template = get_template(
-            'pdf/android_report.html')
     else:
         logger.info('Generating PDF report for android apk')
-        template = get_template(
-            'pdf/android_report.html')
+    template = get_template(
+        'pdf/android_report.html')
     return context, template
 
 
@@ -245,15 +237,13 @@ def handle_pdf_ios(static_db):
         logger.info('Generating PDF report for IOS zip')
         context['average_cvss'], context[
             'security_score'] = score(context['code_analysis'])
-        template = get_template(
-            'pdf/ios_report.html')
     else:
         logger.info('Generating PDF report for IOS ipa')
         context['average_cvss'], context[
             'security_score'] = score(
                 context['binary_analysis'])
-        template = get_template(
-            'pdf/ios_report.html')
+    template = get_template(
+        'pdf/ios_report.html')
     return context, template
 
 
@@ -320,26 +310,23 @@ def compare_apps(request, hash1: str, hash2: str, api=False):
 
 
 def score(findings):
-    # Score Apps based on AVG CVSS Score
-    cvss_scores = []
-    avg_cvss = 0
     app_score = 100
+    cvss_scores = []
     for finding in findings.values():
         find = finding.get('metadata')
         if not find:
             # Hack to support iOS Binary Scan Results
             find = finding
-        if find.get('cvss'):
-            if find['cvss'] != 0:
-                cvss_scores.append(find['cvss'])
+        if find.get('cvss') and find['cvss'] != 0:
+            cvss_scores.append(find['cvss'])
         if find['severity'] == 'high':
-            app_score = app_score - 15
+            app_score -= 15
         elif find['severity'] == 'warning':
-            app_score = app_score - 10
+            app_score -= 10
         elif find['severity'] == 'good':
-            app_score = app_score + 5
-    if cvss_scores:
-        avg_cvss = round(sum(cvss_scores) / len(cvss_scores), 1)
+            app_score += 5
+    avg_cvss = round(sum(cvss_scores) / len(cvss_scores), 1) if cvss_scores else 0
+
     if app_score < 0:
         app_score = 10
     elif app_score > 100:
@@ -421,5 +408,4 @@ def is_secret(inp):
         'lable', 'hide_', 'old', 'update', 'error',
         'empty', 'txt_', 'lbl_',
     )
-    not_str = any(i in inp for i in not_string)
-    return any(i in inp for i in iden) and not not_str
+    return any(i in inp for i in iden) and all(i not in inp for i in not_string)

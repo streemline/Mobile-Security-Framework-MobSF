@@ -41,10 +41,7 @@ ANDROID_API_SUPPORTED = 29
 class Environment:
 
     def __init__(self, identifier=None):
-        if identifier:
-            self.identifier = identifier
-        else:
-            self.identifier = get_device()
+        self.identifier = identifier or get_device()
         self.tools_dir = settings.TOOLS_DIR
         self.frida_str = f'MobSF-Frida-{frida_version}'.encode('utf-8')
         self.xposed_str = b'MobSF-Xposed'
@@ -151,10 +148,9 @@ class Environment:
             args += ['shell']
         args += cmd_list
         try:
-            result = subprocess.check_output(
+            return subprocess.check_output(
                 args,  # lgtm [py/command-line-injection]
                 stderr=subprocess.STDOUT)
-            return result
         except Exception:
             if not silent:
                 logger.exception('Error Running ADB Command')
@@ -189,14 +185,13 @@ class Environment:
         ca_file = None
         if is_file_exists(mobsf_ca):
             ca_construct = '{}.0'
-            pem = open(mobsf_ca, 'rb')
-            ca_obj = crypto.load_certificate(crypto.FILETYPE_PEM, pem.read())
-            md = md5(ca_obj.get_subject().der()).digest()
-            ret = (md[0] | (md[1] << 8) | (md[2] << 16) | md[3] << 24)
-            ca_file_hash = hex(ret).lstrip('0x')
-            ca_file = os.path.join('/system/etc/security/cacerts/',
-                                   ca_construct.format(ca_file_hash))
-            pem.close()
+            with open(mobsf_ca, 'rb') as pem:
+                ca_obj = crypto.load_certificate(crypto.FILETYPE_PEM, pem.read())
+                md = md5(ca_obj.get_subject().der()).digest()
+                ret = (md[0] | (md[1] << 8) | (md[2] << 16) | md[3] << 24)
+                ca_file_hash = hex(ret).lstrip('0x')
+                ca_file = os.path.join('/system/etc/security/cacerts/',
+                                       ca_construct.format(ca_file_hash))
         else:
             logger.warning('mitmproxy root CA is not generated yet.')
             return
@@ -219,10 +214,7 @@ class Environment:
         # Android 4.4+ supported
         proxy_ip = None
         proxy_port = settings.PROXY_PORT
-        if version < 5:
-            proxy_ip = get_proxy_ip(self.identifier)
-        else:
-            proxy_ip = settings.PROXY_IP
+        proxy_ip = get_proxy_ip(self.identifier) if version < 5 else settings.PROXY_IP
         if proxy_ip:
             if version < 4.4:
                 logger.warning('Please set Android VM proxy as %s:%s',
@@ -264,7 +256,7 @@ class Environment:
     def enable_adb_reverse_tcp(self, version):
         """Enable ADB Reverse TCP for Proxy."""
         # Androd 5+ supported
-        if not version >= 5:
+        if version < 5:
             return
         proxy_port = settings.PROXY_PORT
         logger.info('Enabling ADB Reverse TCP on %s', proxy_port)

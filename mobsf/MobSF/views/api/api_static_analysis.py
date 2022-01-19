@@ -82,16 +82,15 @@ def api_scan(request):
 @csrf_exempt
 def api_delete_scan(request):
     """POST - Delete a Scan."""
-    if 'hash' in request.POST:
-        resp = delete_scan(request, True)
-        if 'error' in resp:
-            response = make_api_response(resp, 500)
-        else:
-            response = make_api_response(resp, 200)
-    else:
-        response = make_api_response(
+    if 'hash' not in request.POST:
+        return make_api_response(
             {'error': 'Missing Parameters'}, 422)
-    return response
+    resp = delete_scan(request, True)
+    return (
+        make_api_response(resp, 500)
+        if 'error' in resp
+        else make_api_response(resp, 200)
+    )
 
 
 @request_method(['POST'])
@@ -151,19 +150,18 @@ def api_json_report(request):
 def api_view_source(request):
     """View Source for android & ios source file."""
     params = {'file', 'type', 'hash'}
-    if set(request.POST) >= params:
-        if request.POST['type'] in {'eclipse', 'studio',
-                                    'apk', 'java', 'smali'}:
-            resp = view_source.run(request, api=True)
-        else:
-            resp = ios_view_source.run(request, api=True)
-        if 'error' in resp:
-            response = make_api_response(resp, 500)
-        else:
-            response = make_api_response(resp, 200)
+    if set(request.POST) < params:
+        return make_api_response({'error': 'Missing Parameters'}, 422)
+    if request.POST['type'] in {'eclipse', 'studio',
+                                'apk', 'java', 'smali'}:
+        resp = view_source.run(request, api=True)
     else:
-        response = make_api_response({'error': 'Missing Parameters'}, 422)
-    return response
+        resp = ios_view_source.run(request, api=True)
+    return (
+        make_api_response(resp, 500)
+        if 'error' in resp
+        else make_api_response(resp, 200)
+    )
 
 
 @request_method(['POST'])
@@ -171,16 +169,15 @@ def api_view_source(request):
 def api_compare(request):
     """Compare 2 apps."""
     params = {'hash1', 'hash2'}
-    if set(request.POST) >= params:
-        resp = compare_apps(
-            request,
-            request.POST['hash1'],
-            request.POST['hash2'],
-            True)
-        if 'error' in resp:
-            response = make_api_response(resp, 500)
-        else:
-            response = make_api_response(resp, 200)
-    else:
-        response = make_api_response({'error': 'Missing Parameters'}, 422)
-    return response
+    if set(request.POST) < params:
+        return make_api_response({'error': 'Missing Parameters'}, 422)
+    resp = compare_apps(
+        request,
+        request.POST['hash1'],
+        request.POST['hash2'],
+        True)
+    return (
+        make_api_response(resp, 500)
+        if 'error' in resp
+        else make_api_response(resp, 200)
+    )

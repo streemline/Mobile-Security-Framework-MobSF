@@ -110,15 +110,13 @@ def find_apk_link(url, domain):
 
 def try_provider(package, provider, domain):
     """Try using a provider."""
-    downloaded_file = None
-    data = None
     apk_name = f'{package}.apk'
     temp_file = Path(gettempdir()) / apk_name
     link = find_apk_link(provider, domain)
-    if link:
-        downloaded_file = download_file(link, temp_file)
-    if downloaded_file:
-        data = add_apk(downloaded_file, apk_name)
+    downloaded_file = download_file(link, temp_file) if link else None
+
+    data = add_apk(downloaded_file, apk_name) if downloaded_file else None
+
     if data:
         return data
     return None

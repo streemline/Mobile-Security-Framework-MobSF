@@ -109,10 +109,7 @@ def activity_tester(request, api=False):
                 iden,
                 str(act_no),
                 activity)
-            if test == 'exported':
-                file_iden = 'expact'
-            else:
-                file_iden = 'act'
+            file_iden = 'expact' if test == 'exported' else 'act'
             outfile = ('{}{}-{}.png'.format(
                 screen_dir,
                 file_iden,

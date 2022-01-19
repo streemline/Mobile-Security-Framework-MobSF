@@ -63,17 +63,17 @@ def ios_list_files(src, md5_hash, binary_form, mode):
                             'hash': md5_hash,
                         })
 
-        if len(database) > 0:
+        if database:
             sfiles.append({
                 'issue': 'SQLite Files',
                 'files': database,
             })
-        if len(plist) > 0:
+        if plist:
             sfiles.append({
                 'issue': 'Plist Files',
                 'files': plist,
             })
-        if len(certz) > 0:
+        if certz:
             sfiles.append({
                 'issue': 'Certificate/Key Files Hardcoded inside the App.',
                 'files': certz,

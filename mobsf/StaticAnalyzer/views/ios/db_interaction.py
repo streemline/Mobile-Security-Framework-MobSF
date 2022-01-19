@@ -14,7 +14,7 @@ def get_context_from_db_entry(db_entry):
     """Return the context for IPA/ZIP from DB."""
     try:
         logger.info('Analysis is already Done. Fetching data from the DB...')
-        context = {
+        return {
             'version': settings.MOBSF_VER,
             'title': 'Static Analysis',
             'file_name': db_entry[0].FILE_NAME,
@@ -54,7 +54,6 @@ def get_context_from_db_entry(db_entry):
             'secrets': python_list(db_entry[0].SECRETS),
 
         }
-        return context
     except Exception:
         logger.exception('Fetching from DB')
 
@@ -66,7 +65,7 @@ def get_context_from_analysis(app_dict,
                               all_files):
     """Get the context for IPA/ZIP from analysis results."""
     try:
-        context = {
+        return {
             'version': settings.MOBSF_VER,
             'title': 'Static Analysis',
             'file_name': app_dict['file_name'],
@@ -105,7 +104,6 @@ def get_context_from_analysis(app_dict,
             'appstore_details': app_dict['appstore'],
             'secrets': app_dict['secrets'],
         }
-        return context
     except Exception:
         logger.exception('Rendering to Template')
 

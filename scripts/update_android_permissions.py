@@ -39,8 +39,7 @@ eval(compile(open('../mobsf/StaticAnalyzer/views/'
              'exec'))
 MANIFEST_PERMISSIONS = DVM_PERMISSIONS['MANIFEST_PERMISSION']
 
-for permission_name in online_permissions:
+for permission_name, value in online_permissions.items():
     if permission_name in MANIFEST_PERMISSIONS.keys():
         continue
-    print('\'{}\': {},'.format(permission_name, str(
-        online_permissions[permission_name])))
+    print('\'{}\': {},'.format(permission_name, str(value)))

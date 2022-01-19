@@ -14,7 +14,7 @@ def get_context_from_db_entry(db_entry):
     """Return the context for APPX from DB."""
     try:
         logger.info('Analysis is already Done. Fetching data from the DB...')
-        context = {
+        return {
             'title': 'Static Analysis',
             'version': settings.MOBSF_VER,
             'file_name': db_entry[0].FILE_NAME,
@@ -39,7 +39,6 @@ def get_context_from_db_entry(db_entry):
             'binary_analysis': python_list(db_entry[0].BINARY_ANALYSIS),
             'binary_warnings': python_list(db_entry[0].BINARY_WARNINGS),
         }
-        return context
     except Exception:
         logger.exception('Fetching from DB')
 
@@ -49,7 +48,7 @@ def get_context_from_analysis(app_dic,
                               bin_an_dic):
     """Get the context for APPX from analysis results."""
     try:
-        context = {
+        return {
             'title': 'Static Analysis',
             'version': settings.MOBSF_VER,
             'file_name': app_dic['app_name'],
@@ -74,7 +73,6 @@ def get_context_from_analysis(app_dic,
             'binary_analysis': bin_an_dic['results'],
             'binary_warnings': bin_an_dic['warnings'],
         }
-        return context
     except Exception:
         logger.exception('Rendering to Template')
 

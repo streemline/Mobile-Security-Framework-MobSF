@@ -32,10 +32,10 @@ def run(request):
                 settings.UPLD_DIR, md5 + '/')  # APP DIRECTORY
             tools_dir = os.path.join(
                 directory, 'StaticAnalyzer/tools/')  # TOOLS DIR
-            if binary == '1':
-                is_binary = True
-            elif binary == '0':
+            if binary == '0':
                 is_binary = False
+            elif binary == '1':
+                is_binary = True
             app_path = os.path.join(app_dir, md5 + '.apk')
             manifest_file = get_manifest_file(
                 app_dir,
@@ -44,10 +44,7 @@ def run(request):
                 typ,
                 is_binary)
             mfile = Path(manifest_file)
-            if mfile.exists():
-                manifest = mfile.read_text('utf-8', 'ignore')
-            else:
-                manifest = ''
+            manifest = mfile.read_text('utf-8', 'ignore') if mfile.exists() else ''
             context = {
                 'title': 'AndroidManifest.xml',
                 'file': 'AndroidManifest.xml',

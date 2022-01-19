@@ -88,7 +88,7 @@ def ios_source_analysis(src):
         logger.info('Performing Malware Check on extracted Domains')
         domains = MalwareDomainCheck().scan(urls_list)
         logger.info('Finished Code Analysis, Email and URL Extraction')
-        code_analysis_dict = {
+        return {
             'api': api_findings,
             'code_anal': code_findings,
             'urls_list': urls_list,
@@ -97,7 +97,6 @@ def ios_source_analysis(src):
             'emailnfile': email_n_file,
             'source_type': source_type,
         }
-        return code_analysis_dict
 
     except Exception:
         logger.exception('iOS Source Code Analysis')

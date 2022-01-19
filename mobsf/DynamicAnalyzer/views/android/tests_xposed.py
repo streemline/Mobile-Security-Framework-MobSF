@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def get_hooked_apis():
     """Hooked APIs Regex."""
-    apis = {
+    return {
         'api_fileio': {
             'name': 'File IO',
             'regex': r'libcore.io|android.app.Shared'
@@ -109,7 +109,6 @@ def get_hooked_apis():
             'icon': 'fas fa-puzzle-piece',
         },
     }
-    return apis
 
 
 def droidmon_api_analysis(app_dir, package):
@@ -134,9 +133,7 @@ def droidmon_api_analysis(app_dir, package):
             _, value = line.split(res_id, 1)
             try:
                 apis = json.loads(value, strict=False)
-                call_data = {}
-                call_data['class'] = apis['class']
-                call_data['method'] = apis['method']
+                call_data = {'class': apis['class'], 'method': apis['method']}
                 if apis.get('return'):
                     call_data['return'] = apis['return']
                 if apis.get('args'):

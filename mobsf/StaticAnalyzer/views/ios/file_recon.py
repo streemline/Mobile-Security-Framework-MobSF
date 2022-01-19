@@ -51,13 +51,12 @@ def extract_urls_n_email(src, all_files, strings):
         logger.info('Performing Malware Check on extracted Domains')
         domains = MalwareDomainCheck().scan(urls_list)
         logger.info('Finished URL and Email Extraction')
-        binary_recon = {
+        return {
             'urls_list': urls_list,
             'urlnfile': url_n_file,
             'domains': domains,
             'emailnfile': email_n_file,
         }
-        return binary_recon
 
     except Exception:
         logger.exception('IPA URL and Email Extraction')
