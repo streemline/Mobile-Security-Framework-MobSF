@@ -83,7 +83,7 @@ def code_analysis(app_dir, typ, manifest_file):
                 url_n_file.extend(urls_nf)
                 email_n_file.extend(emails_nf)
         logger.info('Finished Code Analysis, Email and URL Extraction')
-        code_an_dic = {
+        return {
             'api': api_findings,
             'findings': code_findings,
             'niap': niap_findings,
@@ -91,6 +91,5 @@ def code_analysis(app_dir, typ, manifest_file):
             'urls': url_n_file,
             'emails': email_n_file,
         }
-        return code_an_dic
     except Exception:
         logger.exception('Performing Code Analysis')

@@ -107,10 +107,8 @@ def analysis(app_dir, config, is_debuggable, src_type):
         dom_cfg = parsed.getElementsByTagName('domain-config')
         # Any number of <domain-config>
         for cfg in dom_cfg:
-            domain_list = []
             domains = cfg.getElementsByTagName('domain')
-            for dom in domains:
-                domain_list.append(dom.firstChild.nodeValue)
+            domain_list = [dom.firstChild.nodeValue for dom in domains]
             if cfg.getAttribute('cleartextTrafficPermitted') == 'true':
                 finds.append({
                     'scope': domain_list,
@@ -175,10 +173,7 @@ def analysis(app_dir, config, is_debuggable, src_type):
                 for pin in pins:
                     digest = pin.getAttribute('digest')
                     pin_val = pin.firstChild.nodeValue
-                    if digest:
-                        tmp = f'Pin: {pin_val} Digest: {digest}'
-                    else:
-                        tmp = f'Pin: {pin_val}'
+                    tmp = f'Pin: {pin_val} Digest: {digest}' if digest else f'Pin: {pin_val}'
                     all_pins.append(tmp)
                 pins_list = ','.join(all_pins)
                 if exp:

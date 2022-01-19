@@ -90,9 +90,8 @@ class Frida:
         scripts = [self.code]
         scripts.extend(self.get_default_scripts())
         scripts.extend(self.get_auxiliary())
-        final = 'setTimeout(function() {{ {} }}, 0)'.format(
+        return 'setTimeout(function() {{ {} }}, 0)'.format(
             '\n'.join(scripts))
-        return final
 
     def frida_response(self, message, data):
         """Function to handle frida responses."""

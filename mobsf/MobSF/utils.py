@@ -43,22 +43,20 @@ class Color(object):
 def upstream_proxy(flaw_type):
     """Set upstream Proxy if needed."""
     if settings.UPSTREAM_PROXY_ENABLED:
+        proxy_port = str(settings.UPSTREAM_PROXY_PORT)
         if not settings.UPSTREAM_PROXY_USERNAME:
-            proxy_port = str(settings.UPSTREAM_PROXY_PORT)
             proxy_host = '{}://{}:{}'.format(
                 settings.UPSTREAM_PROXY_TYPE,
                 settings.UPSTREAM_PROXY_IP,
                 proxy_port)
-            proxies = {flaw_type: proxy_host}
         else:
-            proxy_port = str(settings.UPSTREAM_PROXY_PORT)
             proxy_host = '{}://{}:{}@{}:{}'.format(
                 settings.UPSTREAM_PROXY_TYPE,
                 settings.UPSTREAM_PROXY_USERNAME,
                 settings.UPSTREAM_PROXY_PASSWORD,
                 settings.UPSTREAM_PROXY_IP,
                 proxy_port)
-            proxies = {flaw_type: proxy_host}
+        proxies = {flaw_type: proxy_host}
     else:
         proxies = {flaw_type: None}
     verify = bool(settings.UPSTREAM_PROXY_SSL_VERIFY)
@@ -141,14 +139,13 @@ def check_update():
 def find_java_binary():
     """Find Java."""
     # Respect user settings
-    if platform.system() == 'Windows':
-        jbin = 'java.exe'
-    else:
-        jbin = 'java'
+    jbin = 'java.exe' if platform.system() == 'Windows' else 'java'
     if is_dir_exists(settings.JAVA_DIRECTORY):
-        if settings.JAVA_DIRECTORY.endswith('/'):
-            return settings.JAVA_DIRECTORY + jbin
-        elif settings.JAVA_DIRECTORY.endswith('\\'):
+        if (
+            settings.JAVA_DIRECTORY.endswith('/')
+            or not settings.JAVA_DIRECTORY.endswith('/')
+            and settings.JAVA_DIRECTORY.endswith('\\')
+        ):
             return settings.JAVA_DIRECTORY + jbin
         else:
             return settings.JAVA_DIRECTORY + '/' + jbin
@@ -185,8 +182,7 @@ def print_n_send_error_response(request,
     """Print and log errors."""
     logger.error(msg)
     if api:
-        api_response = {'error': msg}
-        return api_response
+        return {'error': msg}
     else:
         context = {
             'title': 'Error',
@@ -300,30 +296,20 @@ def gen_sha256_hash(msg):
 
 
 def is_file_exists(file_path):
-    if os.path.isfile(file_path):
-        return True
-    # This fix situation where a user just typed "adb" or another executable
-    # inside settings.py/config.py
-    if shutil.which(file_path):
-        return True
-    else:
-        return False
+    return True if os.path.isfile(file_path) else bool(shutil.which(file_path))
 
 
 def is_dir_exists(dir_path):
-    if os.path.isdir(dir_path):
-        return True
-    else:
-        return False
+    return bool(os.path.isdir(dir_path))
 
 
 def find_process_by(name):
     """Return a set of process path matching name."""
-    proc = set()
-    for p in psutil.process_iter(attrs=['name']):
-        if (name == p.info['name']):
-            proc.add(p.exe())
-    return proc
+    return {
+        p.exe()
+        for p in psutil.process_iter(attrs=['name'])
+        if (name == p.info['name'])
+    }
 
 
 def get_device():
@@ -332,12 +318,11 @@ def get_device():
         return os.getenv('ANALYZER_IDENTIFIER')
     if settings.ANALYZER_IDENTIFIER:
         return settings.ANALYZER_IDENTIFIER
-    else:
-        dev_id = ''
-        out = subprocess.check_output([get_adb(), 'devices']).splitlines()
-        if len(out) > 2:
-            dev_id = out[1].decode('utf-8').split('\t')[0]
-            return dev_id
+    dev_id = ''
+    out = subprocess.check_output([get_adb(), 'devices']).splitlines()
+    if len(out) > 2:
+        dev_id = out[1].decode('utf-8').split('\t')[0]
+        return dev_id
     logger.error('Is the Android VM running?\n'
                  'MobSF cannot identify device id.\n'
                  'Please set ''ANALYZER_IDENTIFIER in '
@@ -468,9 +453,7 @@ def read_sqlite(sqlite_file):
             cur.execute('SELECT * FROM \'%s\'' % table)
             rows = cur.fetchall()
             for sq_row in rows:
-                tmp_row = []
-                for each_row in sq_row:
-                    tmp_row.append(str(each_row))
+                tmp_row = [str(each_row) for each_row in sq_row]
                 table_dict[table[0]]['data'].append(tmp_row)
     except Exception:
         logger.exception('Reading SQLite db')

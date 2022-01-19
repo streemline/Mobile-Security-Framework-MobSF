@@ -49,10 +49,9 @@ def api_logcat(request):
         return make_api_response(
             {'error': 'Missing Parameters'}, 422)
     lcat = dynamic_analyzer.logcat(request, True)
-    if isinstance(lcat, dict):
-        if 'error' in lcat:
-            return make_api_response(
-                lcat, 500)
+    if isinstance(lcat, dict) and 'error' in lcat:
+        return make_api_response(
+            lcat, 500)
     return lcat
 
 

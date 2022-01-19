@@ -59,7 +59,6 @@ def staticanalyzer_windows(request, api=False):
     try:
         # Input validation
         logger.info('Windows Static Analysis Started')
-        rescan = False
         app_dic = {}  # Dict to store the binary attributes
         if api:
             typ = request.POST['scan_type']
@@ -71,8 +70,7 @@ def staticanalyzer_windows(request, api=False):
             re_scan = request.GET.get('rescan', 0)
             checksum = request.GET['checksum']
             filename = request.GET['name']
-        if re_scan == '1':
-            rescan = True
+        rescan = re_scan == '1'
         md5_regex = re.match('^[0-9a-f]{32}$', checksum)
         if (md5_regex) and (typ in ['appx']):
             app_dic['app_name'] = filename  # APP ORIGINAL NAME
@@ -133,10 +131,7 @@ def staticanalyzer_windows(request, api=False):
                                      'md5']) + '.appx',
                         app_dic['md5'])
                 template = 'static_analysis/windows_binary_analysis.html'
-                if api:
-                    return context
-                else:
-                    return render(request, template, context)
+                return context if api else render(request, template, context)
             else:
                 msg = 'File type not supported'
                 if api:
@@ -165,18 +160,14 @@ def _get_token():
     priv_key = rsa.PrivateKey.load_pkcs1(
         open(settings.WINDOWS_VM_SECRET).read())
     signature = rsa.sign(challenge.encode('ascii'), priv_key, 'SHA-512')
-    sig_b64 = base64.b64encode(signature)
-    return sig_b64
+    return base64.b64encode(signature)
 
 
 def _binary_analysis(app_dic):
     """Start binary analsis."""
     logger.info('Starting Binary Analysis')
-    bin_an_dic = {}
+    bin_an_dic = {'results': [], 'warnings': []}
 
-    # Init optional sections to prevent None-Pointer-Errors
-    bin_an_dic['results'] = []
-    bin_an_dic['warnings'] = []
     # Search for exe
     for file_name in app_dic['files']:
         if file_name.endswith('.exe'):
@@ -261,10 +252,7 @@ def _upload_sample(bin_path):
     # Upload test
     with open(bin_path, 'rb') as handle:
         binary_data = xmlrpc.client.Binary(handle.read())
-    # Name of the sample is return by the remote machine
-    name = proxy.upload_file(binary_data, _get_token())
-
-    return name
+    return proxy.upload_file(binary_data, _get_token())
 
 
 def binskim(name, bin_an_dic, run_local=False, app_dir=None):
@@ -549,20 +537,19 @@ def _parse_xml(app_dir):
                         config)  # pylint: disable-msg=E1101
         for child in xml.getchildren():
             # } to prevent conflict with PhoneIdentity..
-            if isinstance(child.tag, str) and child.tag.endswith('}Identity'):
-                xml_dic['version'] = child.get('Version')
-                xml_dic['arch'] = child.get('ProcessorArchitecture')
-            elif (isinstance(child.tag, str)
-                    and child.tag.endswith('Properties')):
-                for sub_child in child.getchildren():
-                    if sub_child.tag.endswith('}DisplayName'):
-                        # TODO(Needed? Compare to existing app_name)
-                        xml_dic['app_name'] = sub_child.text
-                    elif sub_child.tag.endswith('}PublisherDisplayName'):
-                        xml_dic['pub_name'] = sub_child.text
-            elif (isinstance(child.tag, str)
-                    and child.tag.endswith('}Metadata')):
-                xml_dic = parse_xml_metadata(xml_dic, child)
+            if isinstance(child.tag, str):
+                if child.tag.endswith('}Identity'):
+                    xml_dic['version'] = child.get('Version')
+                    xml_dic['arch'] = child.get('ProcessorArchitecture')
+                elif child.tag.endswith('Properties'):
+                    for sub_child in child.getchildren():
+                        if sub_child.tag.endswith('}DisplayName'):
+                            # TODO(Needed? Compare to existing app_name)
+                            xml_dic['app_name'] = sub_child.text
+                        elif sub_child.tag.endswith('}PublisherDisplayName'):
+                            xml_dic['pub_name'] = sub_child.text
+                elif child.tag.endswith('}Metadata'):
+                    xml_dic = parse_xml_metadata(xml_dic, child)
     except Exception:
         logger.exception('Reading from AppxManifest.xml')
     return xml_dic

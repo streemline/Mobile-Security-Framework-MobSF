@@ -79,7 +79,7 @@ def cert_info(app_dir, app_file):
                        for x in a.get_signature_names()])
         pkeys = set(a.get_public_keys_der_v3() + a.get_public_keys_der_v2())
 
-        if len(certs) > 0:
+        if certs:
             certlist.append('Found {} unique certificates'.format(len(certs)))
 
         for cert in certs:
@@ -154,11 +154,10 @@ def cert_info(app_dir, app_file):
                     ' The manifest file indicates SHA256withRSA'
                     ' is in use.')
             findings.append((status, desc))
-        cert_dic = {
+        return {
             'certificate_info': cert_info,
             'certificate_findings': findings,
         }
-        return cert_dic
     except Exception:
         logger.exception('Reading Code Signing Certificate')
         return {}

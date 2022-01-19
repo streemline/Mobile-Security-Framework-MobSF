@@ -104,12 +104,11 @@ class Upload(object):
             response_data['description'] = msg
             return self.resp_json(response_data)
 
-        if self.file_type.is_ipa():
-            if platform.system() not in LINUX_PLATFORM:
-                msg = 'Static Analysis of iOS IPA requires Mac or Linux'
-                logger.error(msg)
-                response_data['description'] = msg
-                return self.resp_json(response_data)
+        if self.file_type.is_ipa() and platform.system() not in LINUX_PLATFORM:
+            msg = 'Static Analysis of iOS IPA requires Mac or Linux'
+            logger.error(msg)
+            response_data['description'] = msg
+            return self.resp_json(response_data)
 
         response_data = self.upload()
         return self.resp_json(response_data)
@@ -205,14 +204,9 @@ def recent_scans(request):
     entries = []
     db_obj = RecentScansDB.objects.all().order_by('-TIMESTAMP').values()
     android = StaticAnalyzerAndroid.objects.all()
-    package_mapping = {}
-    for item in android:
-        package_mapping[item.MD5] = item.PACKAGE_NAME
+    package_mapping = {item.MD5: item.PACKAGE_NAME for item in android}
     for entry in db_obj:
-        if entry['MD5'] in package_mapping.keys():
-            entry['PACKAGE'] = package_mapping[entry['MD5']]
-        else:
-            entry['PACKAGE'] = ''
+        entry['PACKAGE'] = package_mapping.get(entry['MD5'], '')
         logcat = Path(settings.UPLD_DIR) / entry['MD5'] / 'logcat.txt'
         entry['DYNAMIC_REPORT_EXISTS'] = logcat.exists()
         entries.append(entry)
@@ -238,10 +232,9 @@ def download_apk(request):
         context = res
         context['status'] = 'ok'
         context['package'] = package
-    resp = HttpResponse(
+    return HttpResponse(
         json.dumps(context),
         content_type='application/json; charset=utf-8')
-    return resp
 
 
 def search(request):
@@ -271,14 +264,13 @@ def download(request):
             msg = 'Path Traversal Attack Detected'
             return print_n_send_error_response(request, msg)
         ext = os.path.splitext(filename)[1]
-        if ext in allowed_exts:
-            if os.path.isfile(dwd_file):
-                wrapper = FileWrapper(
-                    open(dwd_file, 'rb'))  # lgtm [py/path-injection]
-                response = HttpResponse(
-                    wrapper, content_type=allowed_exts[ext])
-                response['Content-Length'] = os.path.getsize(dwd_file)
-                return response
+        if ext in allowed_exts and os.path.isfile(dwd_file):
+            wrapper = FileWrapper(
+                open(dwd_file, 'rb'))  # lgtm [py/path-injection]
+            response = HttpResponse(
+                wrapper, content_type=allowed_exts[ext])
+            response['Content-Length'] = os.path.getsize(dwd_file)
+            return response
         if filename.endswith(('screen/screen.png', '-icon.png')):
             return HttpResponse('')
     return HttpResponse(status=404)
@@ -288,10 +280,7 @@ def delete_scan(request, api=False):
     """Delete Scan from DB and remove the scan related files."""
     try:
         if request.method == 'POST':
-            if api:
-                md5_hash = request.POST['hash']
-            else:
-                md5_hash = request.POST['md5']
+            md5_hash = request.POST['hash'] if api else request.POST['md5']
             data = {'deleted': 'scan hash not found'}
             if re.match('[0-9a-f]{32}', md5_hash):
                 # Delete DB Entries
@@ -319,9 +308,8 @@ def delete_scan(request, api=False):
                     data = {'deleted': 'yes'}
             if api:
                 return data
-            else:
-                ctype = 'application/json; charset=utf-8'
-                return HttpResponse(json.dumps(data), content_type=ctype)
+            ctype = 'application/json; charset=utf-8'
+            return HttpResponse(json.dumps(data), content_type=ctype)
     except Exception as exp:
         msg = str(exp)
         exp_doc = exp.__doc__

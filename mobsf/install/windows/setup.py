@@ -68,23 +68,16 @@ def download_config():
     if os.path.exists(CONFIG_PATH + CONFIG_FILE):
         os.remove(CONFIG_PATH + CONFIG_FILE)
 
-    # TODO(Give user time to modify config, but mayber after rewrite?)
+    with open(CONFIG_PATH + CONFIG_FILE, 'wb') as conf_file_local:
+        # Downloading File
+        print('[*] Downloading config file..')
+        conf_file = urlrequest.urlopen(CONFIG_URL)  # pylint: disable-msg=E1101
 
-    # Open File
-    conf_file_local = open(CONFIG_PATH + CONFIG_FILE, 'wb')
+        # Save content
+        print(('[*] Saving to File {}'.format(CONFIG_FILE)))
 
-    # Downloading File
-    print('[*] Downloading config file..')
-    conf_file = urlrequest.urlopen(CONFIG_URL)  # pylint: disable-msg=E1101
-
-    # Save content
-    print(('[*] Saving to File {}'.format(CONFIG_FILE)))
-
-    # Write content to file
-    conf_file_local.write(bytes(conf_file.read()))
-
-    # Aaaand close
-    conf_file_local.close()
+        # Write content to file
+        conf_file_local.write(bytes(conf_file.read()))
 
 
 def read_config():
@@ -125,7 +118,7 @@ def check_dependencies():
         print('[!] rsa not installed!')
         missing_deps.append('rsa')
 
-    if len(missing_deps) > 0:
+    if missing_deps:
         print('[!] Please install these missing dependencies:')
         print(missing_deps)
         sys.exit()
@@ -140,22 +133,17 @@ def tools_nuget():
     mobsf_subdir_tools = CONFIG['MobSF']['tools']
     nuget_file_path = CONFIG['nuget']['file']
 
-    # Open File
-    nuget_file_local = open(os.path.join(
-        mobsf_subdir_tools, nuget_file_path), 'wb')
+    with open(os.path.join(
+        mobsf_subdir_tools, nuget_file_path), 'wb') as nuget_file_local:
+        # Downloading File
+        print('[*] Downloading nuget..')
+        nuget_file = urlrequest.urlopen(nuget_url)  # pylint: disable-msg=E1101
 
-    # Downloading File
-    print('[*] Downloading nuget..')
-    nuget_file = urlrequest.urlopen(nuget_url)  # pylint: disable-msg=E1101
+        # Save content
+        print(('[*] Saving to File {}'.format(nuget_file_path)))
 
-    # Save content
-    print(('[*] Saving to File {}'.format(nuget_file_path)))
-
-    # Write content to file
-    nuget_file_local.write(bytes(nuget_file.read()))
-
-    # Aaaand close
-    nuget_file_local.close()
+        # Write content to file
+        nuget_file_local.write(bytes(nuget_file.read()))
 
 
 def tools_binskim():
@@ -226,21 +214,16 @@ def tools_rpcclient():
     mobsf_subdir_tools = CONFIG['MobSF']['tools']
     rpc_file_path = CONFIG['rpc']['file']
 
-    # Open File
-    rpc_local_file = open(mobsf_subdir_tools + rpc_file_path, 'wb')
+    with open(mobsf_subdir_tools + rpc_file_path, 'wb') as rpc_local_file:
+        # Downloading File
+        print('[*] Downloading rpc_server..')
+        rpc_file = urlrequest.urlopen(rpc_url)
 
-    # Downloading File
-    print('[*] Downloading rpc_server..')
-    rpc_file = urlrequest.urlopen(rpc_url)
+        # Save content
+        print(('[*] Saving to File {}'.format(rpc_file_path)))
 
-    # Save content
-    print(('[*] Saving to File {}'.format(rpc_file_path)))
-
-    # Write content to file
-    rpc_local_file.write(bytes(rpc_file.read()))
-
-    # Aaaand close
-    rpc_local_file.close()
+        # Write content to file
+        rpc_local_file.write(bytes(rpc_file.read()))
 
 
 def tools_binscope():
@@ -259,20 +242,17 @@ def tools_binscope():
     if not os.path.exists(binscope_path):
         os.makedirs(binscope_path)
 
-    binscope_installer_file = open(binscope_installer_path, 'wb')
+    with open(binscope_installer_path, 'wb') as binscope_installer_file:
+        # Downloading File
+        print('[*] Downloading BinScope..')
+        binscope_installer = urlrequest.urlopen(binscope_url)
 
-    # Downloading File
-    print('[*] Downloading BinScope..')
-    binscope_installer = urlrequest.urlopen(binscope_url)
+        # Save content
+        print(('[*] Saving to File {}'.format(binscope_installer_path)))
 
-    # Save content
-    print(('[*] Saving to File {}'.format(binscope_installer_path)))
+        # Write content to file
+        binscope_installer_file.write(bytes(binscope_installer.read()))
 
-    # Write content to file
-    binscope_installer_file.write(bytes(binscope_installer.read()))
-
-    # Aaaand close
-    binscope_installer_file.close()
     # Execute the installer
     print(('[*] Installing BinScope to {}'.format(binscope_path)))
     cmd = ('msiexec INSTALLLOCATION='
@@ -296,13 +276,10 @@ def generate_secret():
     # https://stuvel.eu/python-rsa-doc/usage.html#generating-keys
     (pubkey, privkey) = rsa.newkeys(2048)
 
-    # Save private and pub key
-    priv_key_file = open(CONFIG['MobSF']['priv_key'], 'w')
-    priv_key_file.write(privkey.save_pkcs1().decode('utf-8'))
-    priv_key_file.close()
-    pub_key_file = open(CONFIG['MobSF']['pub_key'], 'w')
-    pub_key_file.write(pubkey.save_pkcs1().decode('utf-8'))
-    pub_key_file.close()
+    with open(CONFIG['MobSF']['priv_key'], 'w') as priv_key_file:
+        priv_key_file.write(privkey.save_pkcs1().decode('utf-8'))
+    with open(CONFIG['MobSF']['pub_key'], 'w') as pub_key_file:
+        pub_key_file.write(pubkey.save_pkcs1().decode('utf-8'))
     config_path = os.path.join(
         expanduser('~'),
         '.MobSF',
@@ -327,18 +304,13 @@ def autostart():
 
     print('[*] Creating autostart binary...')
 
-    # Open file
-    autostart_file = open(batch_file, 'wb')
-
-    # Define bat-text
-    text = """
+    with open(batch_file, 'wb') as autostart_file:
+        # Define bat-text
+        text = """
     @echo off
     python "{}" %*
     pause""".format(mobsf_subdir_tools + rpc_file)
-    autostart_file.write(bytes(text, 'utf8'))
-
-    # Close handle
-    autostart_file.close()
+        autostart_file.write(bytes(text, 'utf8'))
 
     print('[*] Done. Start the server.')
 

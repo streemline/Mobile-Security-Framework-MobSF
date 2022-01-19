@@ -57,9 +57,7 @@ def format_findings(findings, root):
             if start == end:
                 match_lines = start
             else:
-                exp_lines = []
-                for i in range(start, end + 1):
-                    exp_lines.append(i)
+                exp_lines = list(range(start, end + 1))
                 match_lines = ','.join(str(m) for m in exp_lines)
             if file_path not in tmp_dict:
                 tmp_dict[file_path] = str(match_lines)
